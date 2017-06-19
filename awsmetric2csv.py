@@ -1,8 +1,6 @@
 import argparse
-import boto3
-import datetime
-import numpy as np
 import csv
+import utils
 
 # parse argument
 parser = argparse.ArgumentParser()
@@ -19,29 +17,22 @@ parser.add_argument("--filename", help="""
 args = parser.parse_args()
 
 # check if resource parameter is valid
-allowed_resources = ['ec2']
+allowed_resources = ['ec2', 'rds']
 if args.resource not in allowed_resources:
     print('Invalid resource %s provided. Valid resources: %s' % (
         args.resource, allowed_resources))
     exit(0)
 
 # extract parameters
+resource = args.resource
 period = int(args.period) if args.period else 3600
 days = int(args.days) if args.days else 7
 filename = args.filename if args.filename else 'output.csv'
 
-# get current time
-now = datetime.datetime.now()
+# get all instances
+instances = utils.get_all_instances(resource)
 
-# create boto clients
-cw = boto3.client('cloudwatch')
-ec2 = boto3.resource('ec2')
-
-# get all running instances
-instances = ec2.instances.filter(
-    Filters=[
-        {'Name': 'instance-state-name', 'Values': ['running']}])
-
+# process and write to csv
 with open(filename, 'wb') as csvfile:
     # initialize csv writer
     csvwriter = csv.writer(
@@ -51,81 +42,19 @@ with open(filename, 'wb') as csvfile:
         quoting=csv.QUOTE_MINIMAL)
 
     # write the headers to csv
-    csvwriter.writerow([
-        'name',
-        'instance',
-        'type',
-        'hypervisor',
-        'virtualization_type',
-        'architecture',
-        'ebs_optimized',
-        'image_id',
-        'key_name',
-        'metric',
-        'low',
-        'high',
-        'ave',
-        'median',
-        'launch_time',
-        'subnet_id',
-        'vpc_id'
-    ])
+    csvwriter.writerow(utils.csv_headers[resource])
 
     # loop through each instance
     for instance in instances:
-        # get EC2 datapoints
-        metric_name = 'CPUUtilization'
-        result = cw.get_metric_statistics(
-            Namespace='AWS/EC2',
-            MetricName=metric_name,
-            Dimensions=[{
-                'Name': 'InstanceId',
-                'Value': instance.id
-            }],
-            StartTime=now - datetime.timedelta(days=days),
-            EndTime=now,
-            Period=period,
-            Statistics=['Maximum'],
-            Unit='Percent'
-        )
+        # get datapoints and process
+        if resource == 'ec2':
+            instance_id = instance.id
+        elif resource == 'rds':
+            instance_id = instance['DBInstanceIdentifier']
+        result = utils.get_metric(resource, instance_id, period, days)
+        item_list_arr = utils.process_metric(result)
 
-        # get all datapoints and add to list
-        item_list = []
-        for datapoint in result['Datapoints']:
-            item_list.append(float(datapoint['Maximum']))
+        # write metrics to csv
+        utils.write_to_csv(resource, csvwriter, instance, item_list_arr)
 
-        # on empty datapoints, append zero to avoid zero-size array error
-        if len(item_list) == 0:
-            item_list.append(0)
-
-        # convert list to numpy array
-        item_list_arr = np.array(item_list)
-
-        # get instance name
-        if instance.tags:
-            name_dict = next(
-                (i for i in instance.tags if i['Key'] == 'Name'),
-                None)
-        else:
-            name_dict = None
-
-        # write data rows
-        csvwriter.writerow([
-            '' if name_dict is None else name_dict.get('Value'),
-            instance.id,
-            instance.instance_type,
-            instance.hypervisor,
-            instance.virtualization_type,
-            instance.architecture,
-            instance.ebs_optimized,
-            instance.image_id,
-            instance.key_name,
-            metric_name,
-            np.min(item_list_arr),
-            np.max(item_list_arr),
-            np.round(np.average(item_list_arr), 2),
-            np.median(item_list_arr),
-            instance.launch_time,
-            instance.subnet_id,
-            instance.vpc_id
-        ])
+    print('CSV file %s created.' % filename)

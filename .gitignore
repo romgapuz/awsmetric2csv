@@ -100,4 +100,6 @@ ENV/
 # mypy
 .mypy_cache/
 
+.DS_Store
+
 output.csv
