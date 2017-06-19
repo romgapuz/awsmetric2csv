@@ -3,11 +3,13 @@
 **awsmetric2csv** (AWS Metric to CSV) is a Python command-line utility to extract CloudWatch metric data from an AWS resources (e.g. EC2, RDS).
 
 **Features:**
-- Extract metric data from all EC2 instances
+- Extract CPU metric data from all EC2 instances of the selected region
+- Extract CPU metric data from all RDS instances of the selected region
 - Customize parameters: period, days and filename
+- Save output to csv file
 
 **Upcoming Features:**
-- Add RDS support
+- Support for other metrics e.g. Network IO,
 
 ### Installation
 
@@ -41,9 +43,13 @@ For usage help run:
 
 `python awsmetric2csv.py -h`
 
-To extract EC2 instances metrics, run:
+To extract EC2 instances CPU metrics, run:
 
 `python awsmetric2csv.py ec2`
+
+To extract RDS instances CPU metrics, run:
+
+`python awsmetric2csv.py rds`
 
 This will create the **output.csv** file.
 
