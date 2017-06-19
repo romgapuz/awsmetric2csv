@@ -2,14 +2,14 @@
 
 **awsmetric2csv** (AWS Metric to CSV) is a Python command-line utility to extract CloudWatch metric data from an AWS resources (e.g. EC2, RDS).
 
-Features
+**Features:**
 - Extract metric data from all EC2 instances
 - Customize parameters: period, days and filename
 
-Upcoming Features:
+**Upcoming Features:**
 - Add RDS support
 
-#### Installation
+### Installation
 
 This application requires Python 2.7 or above. If you don't have Python installed, please download it from here https://www.python.org/downloads/.
 
@@ -21,13 +21,21 @@ Go to the project folder:
 
 `cd awsmetric2csv`
 
-Prior installing the packages below, you can optionally install and use virtualenv http://python-guide-pt-br.readthedocs.io/en/latest/dev/virtualenvs/.
+Prior installing the packages below, you can optionally install and use [virtualenv](http://python-guide-pt-br.readthedocs.io/en/latest/dev/virtualenvs/).
 
 Install packages:
 
 `pip install -r requirements.txt`
 
-#### Usage
+Install AWS CLI:
+
+`pip install awscli`
+
+Configure the [AWS CLI](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html):
+
+`aws configure`
+
+### Usage
 
 For usage help run:
 
@@ -39,6 +47,6 @@ To extract EC2 instances metrics, run:
 
 This will create the **output.csv** file.
 
-#### Issues
+### Issues
 
 - When error **InvalidParameterCombination** is received. Reduced either period and days parameters.
