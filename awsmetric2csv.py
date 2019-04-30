@@ -33,7 +33,7 @@ filename = args.filename if args.filename else 'output.csv'
 instances = utils.get_all_instances(resource)
 
 # process and write to csv
-with open(filename, 'wb') as csvfile:
+with open(filename, 'w') as csvfile:
     # initialize csv writer
     csvwriter = csv.writer(
         csvfile,
